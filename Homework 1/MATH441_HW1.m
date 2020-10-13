@@ -16,6 +16,7 @@ beta = [0.1, 0.2, 0.5];
 phi = [0.5, 1, 2];
 
 counter = 1;
+    
 % Model
 for i = 1: length(beta)
     for j = 1: length(phi)
@@ -28,10 +29,13 @@ for i = 1: length(beta)
         subplot(3,3, counter)
         yyaxis left
         plot(time, sol(:,1),'linewidth',2)
+        xlabel('time')
+        ylabel('predator population')
         ylim([0 inf])
         
         yyaxis right 
         plot(time, sol(:,2),'linewidth',2)
+        ylabel('prey population')
         xlim([0 10])
         ylim([0 inf])
         title("beta =" + beta(i) + ", phi = " + phi(j))
