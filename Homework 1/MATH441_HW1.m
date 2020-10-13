@@ -4,7 +4,7 @@
 alpha = 7.5;
 
 % per capita growth per prey
-gamma = 0.003;
+gamma = 0.008;
 
 % per capita death per predator
 delta = 0.01;
