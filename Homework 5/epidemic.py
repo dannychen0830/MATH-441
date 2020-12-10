@@ -98,6 +98,24 @@ fig,ax = plt.subplots(2,3,constrained_layout=True)
 
 count = 0
 for t in range(time_step):
+    # at t = 50, vaccines are introduced
+    if t == 50:
+        sus_count = 0 
+        for i in range(1,n+1):
+            for j in range(1,n+1):
+                if neighborhood[i,j,0] == 2:
+                    sus_count += 1
+        # 25% are vaccinated
+        vac_num = math.floor(sus_count/4)
+        permx = np.random.permutation(n)
+        permy = np.random.permutation(n)
+        for k in range(len(permx)):
+            if neighborhood[permx[k],permy[k],0] == 2:
+                neighborhood[permx[k],permy[k],0] = 0
+                vac_num -= 1
+            if vac_num == 0:
+                break
+
     for i in range(1,n+1):
         for j in range(1,n+1):
             matrix = markovMatrix(neighborhood[i,j,:])
@@ -105,6 +123,7 @@ for t in range(time_step):
             next_state = sampleMM(vector)
             neighborhood[i,j,0] = next_state
     neighborhood = update_neighbors(neighborhood)
+
     if t == record_time[count]:
         row = math.floor(count/3)
         col = count % 3
