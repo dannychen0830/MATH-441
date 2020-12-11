@@ -101,6 +101,25 @@ new_dead = np.zeros(time_step)
 
 count = 0
 for t in range(time_step):
+    if t == 50:
+        sus_count = 0 
+        for i in range(1,n+1):
+            for j in range(1,n+1):
+                if neighborhood[i,j,0] == 2:
+                    sus_count += 1
+        # 25% are vaccinated
+        vac_num = math.floor(sus_count/4)
+        print('vaccinate ' + str(vac_num) + ' people')
+        perm = np.random.permutation(n**2)
+        for k in range(len(perm)):
+            xpos = perm[k] % n 
+            ypos = math.floor(perm[k]/n)
+            if neighborhood[xpos,ypos,0] == 2:
+                neighborhood[xpos,ypos,0] = 0
+                vac_num -= 1
+            if vac_num == 0:
+                print('vaccinated')
+                break
     for i in range(1,n+1):
         for j in range(1,n+1):
             matrix = markovMatrix(neighborhood[i,j,:])
