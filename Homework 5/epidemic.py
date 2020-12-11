@@ -52,7 +52,7 @@ def markovMatrix(agent):
     d = 0.00001 #probability of death when healthy 
 
     infected_nei = 0
-    for i in range(1, 5):
+    for i in range(1, len(agent)):
         if agent[i] == 3 or agent[i] == 4:
             infected_nei += 1
     infect_prob = (1-np.exp(-1*beta*infected_nei))
@@ -101,29 +101,32 @@ new_dead = np.zeros(time_step)
 
 count = 0
 for t in range(time_step):
-    if t == 50:
-        sus_count = 0 
-        for i in range(1,n+1):
-            for j in range(1,n+1):
-                if neighborhood[i,j,0] == 2:
-                    sus_count += 1
-        # 25% are vaccinated
-        vac_num = math.floor(sus_count/4)
-        print('vaccinate ' + str(vac_num) + ' people')
-        perm = np.random.permutation(n**2)
-        for k in range(len(perm)):
-            xpos = perm[k] % n 
-            ypos = math.floor(perm[k]/n)
-            if neighborhood[xpos,ypos,0] == 2:
-                neighborhood[xpos,ypos,0] = 0
-                vac_num -= 1
-            if vac_num == 0:
-                print('vaccinated')
-                break
     for i in range(1,n+1):
         for j in range(1,n+1):
-            matrix = markovMatrix(neighborhood[i,j,:])
             current_state = int(neighborhood[i,j,0])
+            # if 1.it's holiday, 2. with .5 prob, and 3. not dead
+            if (t == 101 or t == 102) and (np.random.uniform(0,1) < 0.5) and (current_state != 5):
+                # double the neighbors
+                agent = np.zeros(9)
+                # take on the original neighbors
+                for k in range(0,5):
+                    agent[k] = neighborhood[i,j,k]
+                # find 4 new neighbors
+                spot = 1
+                perm = np.random.permutation(n**2)
+                for l in range(len(perm)):
+                    x = perm[l] % n 
+                    x += 1
+                    y = math.floor(perm[l]/n) 
+                    y += 1
+                    if neighborhood[x,y,0] != 5:
+                        agent[4+spot] = neighborhood[x,y,0]
+                    if spot == 4:
+                        break 
+                matrix = markovMatrix(agent)
+                
+            else:
+                matrix = markovMatrix(neighborhood[i,j,:])
             vector = matrix[:,current_state]
             next_state = sampleMM(vector)
             neighborhood[i,j,0] = next_state
