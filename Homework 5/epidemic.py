@@ -101,32 +101,42 @@ new_dead = np.zeros(time_step)
 
 count = 0
 for t in range(time_step):
+    if t == 101:
+        # pick 200 people out 
+        perm = np.random.permutation(n**2)
+        group = np.zeros(200)
+        group_state = np.zeros(200)
+        group_count = 0
+        for k in range(len(perm)):
+            x = perm[k] % n
+            x += 1
+            y = math.floor(perm[k]/n) 
+            y += 1
+            if neighborhood[x,y,0] != 5:
+                group[group_count] = perm[k]
+                group_state[group_count] = neighborhood[x,y,0]
+                group_count += 1
+            if group_count == 200:
+                print('grouping completed')
+                break
+
+        for k in range(len(group)):
+            x = perm[k] % n
+            x += 1
+            y = math.floor(perm[k]/n) 
+            y += 1
+            agent = np.concatenate(([neighborhood[x,y,0]],group))
+            current_state = int(neighborhood[i,j,0])
+            matrix = markovMatrix(neighborhood[i,j,:])
+            vector = matrix[:,current_state]
+            next_state = sampleMM(vector)
+            neighborhood[i,j,0] = next_state
+    neighborhood = update_neighbors(neighborhood)
+
     for i in range(1,n+1):
         for j in range(1,n+1):
             current_state = int(neighborhood[i,j,0])
-            # if 1.it's holiday, 2. with .5 prob, and 3. not dead
-            if (t == 101 or t == 102) and (np.random.uniform(0,1) < 0.5) and (current_state != 5):
-                # double the neighbors
-                agent = np.zeros(9)
-                # take on the original neighbors
-                for k in range(0,5):
-                    agent[k] = neighborhood[i,j,k]
-                # find 4 new neighbors
-                spot = 1
-                perm = np.random.permutation(n**2)
-                for l in range(len(perm)):
-                    x = perm[l] % n 
-                    x += 1
-                    y = math.floor(perm[l]/n) 
-                    y += 1
-                    if neighborhood[x,y,0] != 5:
-                        agent[4+spot] = neighborhood[x,y,0]
-                    if spot == 4:
-                        break 
-                matrix = markovMatrix(agent)
-                
-            else:
-                matrix = markovMatrix(neighborhood[i,j,:])
+            matrix = markovMatrix(neighborhood[i,j,:])
             vector = matrix[:,current_state]
             next_state = sampleMM(vector)
             neighborhood[i,j,0] = next_state
@@ -179,3 +189,9 @@ for i in range(1,n+1):
         neighborhood[i,j,0] = next_state
 
 plt.pcolormesh(neighborhood[1:n+1,1:n+1:,0],vmin=0,vmax=5)
+
+#%% 
+a = [1,2,3]
+b = [1]
+print(np.concatenate((a,b)))
+# %%
