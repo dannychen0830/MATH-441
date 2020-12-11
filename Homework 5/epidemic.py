@@ -45,9 +45,9 @@ print(neighborhood[1,100,:])
 
 def markovMatrix(agent):
     #parameters:
-    beta = 0.4 # infectious rate
-    delta = 0.4 # probability of recovery
-    gamma = 0.5 # probability of remaining sick
+    beta = 0.45 # infectious rate
+    delta = 0.35 # probability of recovery
+    gamma = 0.45 # probability of remaining sick
     eta = 0.2 # probability of asymptomatic
     d = 0.00001 #probability of death when healthy 
 
@@ -58,11 +58,11 @@ def markovMatrix(agent):
     infect_prob = (1-np.exp(-1*beta*infected_nei))
 
     row0 = [1-d,0,0,0,0,0]
-    row1 = [0,1-d,0,delta,delta,0]
+    row1 = [0,1-d,0,delta*1.2,delta,0]
     row2 = [0,0,(1-d)*(1-infect_prob),0,0,0]
-    row3 = [0,0,(1-d)*(eta)*infect_prob,gamma,0,0]
+    row3 = [0,0,(1-d)*(eta)*infect_prob,gamma*1.2,0,0]
     row4 = [0,0,(1-d)*(1-eta)*infect_prob,0,gamma,0]
-    row5 = [d,d,d,1-gamma-delta,1-gamma-delta,1]
+    row5 = [d,d,d,1-1.2*gamma-1.2*delta,1-gamma-delta,1]
 
     return np.array([row0,row1,row2,row3,row4,row5])
 
@@ -91,40 +91,32 @@ testvec = np.random.uniform(0,1,5)
 testvec /= np.sum(testvec)
 print(testvec, sampleMM(testvec))
 # %% Main Simulation
-time_step = 201
+time_step = 250
 record_time = [0,40,80,120,160,200]
 
 fig,ax = plt.subplots(2,3,constrained_layout=True)
+new_symp = np.zeros(time_step)
+new_asymp = np.zeros(time_step)
+new_dead = np.zeros(time_step)
 
 count = 0
 for t in range(time_step):
-    # at t = 50, vaccines are introduced
-    if t == 50:
-        sus_count = 0 
-        for i in range(1,n+1):
-            for j in range(1,n+1):
-                if neighborhood[i,j,0] == 2:
-                    sus_count += 1
-        # 25% are vaccinated
-        vac_num = math.floor(sus_count/4)
-        permx = np.random.permutation(n)
-        permy = np.random.permutation(n)
-        for k in range(len(permx)):
-            if neighborhood[permx[k],permy[k],0] == 2:
-                neighborhood[permx[k],permy[k],0] = 0
-                vac_num -= 1
-            if vac_num == 0:
-                break
-
     for i in range(1,n+1):
         for j in range(1,n+1):
             matrix = markovMatrix(neighborhood[i,j,:])
-            vector = matrix[:,int(neighborhood[i,j,0])]
+            current_state = int(neighborhood[i,j,0])
+            vector = matrix[:,current_state]
             next_state = sampleMM(vector)
             neighborhood[i,j,0] = next_state
+            if current_state != next_state:
+                if next_state == 3:
+                    new_asymp[t] += 1
+                if next_state == 4:
+                    new_symp[t] += 1
+                if next_state == 5:
+                    new_dead[t] += 1
     neighborhood = update_neighbors(neighborhood)
-
-    if t == record_time[count]:
+    if count < len(record_time) and t == record_time[count]:
         row = math.floor(count/3)
         col = count % 3
         print(str(row) + ',' + str(col))
@@ -132,7 +124,31 @@ for t in range(time_step):
         ax[row,col].set_title('t = ' + str(t))
         fig.colorbar(ax[row,col].pcolormesh(neighborhood[1:n+1,1:n+1:,0],vmin=0,vmax=5), ax=ax.flat)
         count += 1
-# %%
+#%% calculate cumulative count 
+cum_symp = np.zeros(time_step)
+cum_asymp = np.zeros(time_step)
+cum_dead = np.zeros(time_step)
+for i in range(1,time_step):
+    cum_symp[i] += cum_symp[i-1] + new_symp[i-1]
+    cum_asymp[i] += cum_asymp[i-1] + + new_asymp[i-1]
+    cum_dead[i] += cum_dead[i-1] + + new_dead[i-1]
+#%% Plot New Counts
+fig2, ax2 = plt.subplots(2,3,constrained_layout=True)
+ax2[0,0].bar(np.arange(time_step),new_symp)
+ax2[0,0].set_title('Daily new \nSymptomatic')
+ax2[0,1].bar(np.arange(time_step),new_asymp)
+ax2[0,1].set_title('Daily New \nAsymptomatic')
+ax2[0,2].bar(np.arange(time_step),new_dead)
+ax2[0,2].set_title('Daily New Death')
+
+ax2[1,0].plot(np.arange(time_step),cum_symp)
+ax2[1,0].set_title('Cumulative \n Symptomatic')
+ax2[1,1].plot(np.arange(time_step),cum_asymp)
+ax2[1,1].set_title('Cumulative \nAsymptomatic')
+ax2[1,2].plot(np.arange(time_step),cum_dead)
+ax2[1,2].set_title('Cumulative Death')
+
+# %% Test loop
 for i in range(1,n+1):
     for j in range(1,n+1):
         matrix = markovMatrix(neighborhood[i,j,:])
@@ -141,5 +157,3 @@ for i in range(1,n+1):
         neighborhood[i,j,0] = next_state
 
 plt.pcolormesh(neighborhood[1:n+1,1:n+1:,0],vmin=0,vmax=5)
-
-# %%
